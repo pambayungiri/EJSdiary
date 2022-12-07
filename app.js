@@ -1,6 +1,5 @@
 //jshint esversion:6
 
-let posts = [];
 
 const express = require("express");
 const bodyParser = require("body-parser");
@@ -21,12 +20,12 @@ mongoose.connect(
 const itemSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: [true, "ther's no name in it"]
+    required: [true, "ther's no name in it"],
   },
   content: String,
-})
+});
 
-const Item = mongoose.model("Item", itemSchema)
+const Item = mongoose.model("Item", itemSchema);
 
 const homeStartingContent =
   "Lacus vel facilisis volutpat est velit egestas dui id ornare. Semper auctor neque vitae tempus quam. Sit amet cursus sit amet dictum sit amet justo. Viverra tellus in hac habitasse. Imperdiet proin fermentum leo vel orci porta. Donec ultrices tincidunt arcu non sodales neque sodales ut. Mattis molestie a iaculis at erat pellentesque adipiscing. Magnis dis parturient montes nascetur ridiculus mus mauris vitae ultricies. Adipiscing elit ut aliquam purus sit amet luctus venenatis lectus. Ultrices vitae auctor eu augue ut lectus arcu bibendum at. Odio euismod lacinia at quis risus sed vulputate odio ut. Cursus mattis molestie a iaculis at erat pellentesque adipiscing.";
@@ -43,9 +42,15 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
 app.get("/", function (req, res) {
-  res.render("home", {
-    homeStartingContent: homeStartingContent,
-    posts: posts,
+  Item.find({}, function (err, item) {
+    if (err) {
+      console.log(err);
+    } else {
+      res.render("home", {
+        homeStartingContent: homeStartingContent,
+        posts: item,
+      });
+    }
   });
 });
 app.get("/about", function (req, res) {
@@ -53,14 +58,23 @@ app.get("/about", function (req, res) {
 });
 app.get("/posts/:postName", function (req, res) {
   const requestedTitle = _.lowerCase(req.params.postName);
-  posts.forEach((post) => {
-    const storedTitle = _.lowerCase(post.title);
-    const title = post.title
-    const content = post.content
-    if (requestedTitle === storedTitle) {
-      res.render("post", { content: content, title: title });
+
+  Item.find({}, function (err, item) {
+    if (err) {
+      console.log(err);
+    } else {
+      item.forEach((post) => {
+        const storedTitle = _.lowerCase(post.title);
+        const title = post.title;
+        const content = post.content;
+        if (requestedTitle === storedTitle) {
+          res.render("post", { content: content, title: title });
+        }
+      });
     }
   });
+
+
 });
 app.get("/contact", function (req, res) {
   res.render("contact", { contactContent: contactContent });
@@ -69,11 +83,11 @@ app.get("/compose", function (req, res) {
   res.render("compose");
 });
 app.post("/compose", function (req, res) {
-  const post = {
+  const item = new Item({
     title: req.body.postTitle,
     content: req.body.postBody,
-  };
-  posts.push(post);
+  });
+  item.save();
   res.redirect("/");
 });
 
